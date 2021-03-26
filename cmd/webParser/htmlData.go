@@ -1,7 +1,6 @@
 package webParser
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -78,7 +77,7 @@ func (h *HTMLData) GetLink(attribute []string, p *Parser) (string, error) {
 	}
 	link, _ = url.QueryUnescape(link)
 	if link == "" {
-		return "", errors.New(fmt.Sprintf("failed to find attribute %s", attribute))
+		return "", fmt.Errorf("failed to find attribute %s", attribute)
 	}
 	if strings.Contains(link, "http") {
 		links := "http" + strings.Split(link, "http")[1]
@@ -92,7 +91,7 @@ func (h *HTMLData) GetLink(attribute []string, p *Parser) (string, error) {
 		return links, nil
 	}
 	if !strings.HasPrefix(link, "/") {
-		return "", errors.New(fmt.Sprintf("link does not have the prefix / :%s", link))
+		return "", fmt.Errorf("link does not have the prefix / :%s", link)
 	}
 	parsedURL, err := url.Parse(p.URL)
 	if err != nil {
