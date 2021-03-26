@@ -17,7 +17,7 @@ type Parser struct {
 	URL    string
 	Body   string
 	Tokens *html.Tokenizer
-	html   *HTMLData
+	Html   *HTMLData
 }
 
 func NewParser(Logger *zap.Logger) *Parser {
@@ -26,7 +26,7 @@ func NewParser(Logger *zap.Logger) *Parser {
 	}
 }
 
-func (p *Parser) Load(url string) error {
+func (p *Parser) load(url string) error {
 	response, err := http.Get(url)
 	if err != nil {
 		p.Logger.Error(fmt.Sprintf("failed to load site %s", url), zap.Error(err))
@@ -45,7 +45,7 @@ func (p *Parser) Load(url string) error {
 
 func (p *Parser) Get(url string) error {
 	if p.URL != url {
-		err := p.Load(url)
+		err := p.load(url)
 		if err != nil {
 			p.Logger.Error(fmt.Sprintf("failed getting url source: %s", url), zap.Error(err))
 			return err
@@ -58,7 +58,7 @@ func (p *Parser) Get(url string) error {
 		p.Logger.Error(fmt.Sprintf("failed parsing url data: %s", url), zap.Error(err))
 		return err
 	}
-	p.html = data
+	p.Html = data
 	return nil
 }
 
