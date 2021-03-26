@@ -1,16 +1,16 @@
-package main
+package WebParser
 
 import (
-	"WebParser/cmd/webParser"
 	"fmt"
 	"strings"
+	"testing"
 
 	"go.uber.org/zap"
 )
 
-func main() {
+func TestGithub(t *testing.T) {
 	logger, err := zap.NewProduction()
-	parser := webParser.NewParser(logger)
+	parser := NewParser(logger)
 	err = parser.Get("https://github.com/TheBlockNinja/WebParser")
 	if err != nil {
 		parser.Logger.Error("failed load website source", zap.Error(err))
