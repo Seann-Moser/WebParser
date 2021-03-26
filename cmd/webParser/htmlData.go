@@ -12,11 +12,11 @@ import (
 )
 
 type HTMLData struct {
-	Tag        string
-	Attributes map[string]string
-	TextData   string
-	Child      []*HTMLData
-	Sibling    []*HTMLData
+	Tag        string            `json:"tag"`
+	Attributes map[string]string `json:"attributes"`
+	TextData   string            `json:"text_data"`
+	Child      []*HTMLData       `json:"children"`
+	Sibling    []*HTMLData       `json:"siblings"`
 }
 
 func (p *Parser) getHtmlDataR(depth int, currentTag string) (*HTMLData, error) {
