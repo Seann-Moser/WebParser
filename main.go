@@ -26,7 +26,7 @@ func TestGithub(t *testing.T) {
 
 		fmt.Printf("Link: %s Title: %s", link, i.Attributes["title"])
 		filename := fmt.Sprintf("%s.%s", i.Attributes["title"], extension[len(extension)-1])
-		err = parser.Download(link, filename)
+		err = parser.Download(link, filename,1)
 		if err != nil {
 			parser.Logger.Error("failed downloading image", zap.Error(err))
 			continue

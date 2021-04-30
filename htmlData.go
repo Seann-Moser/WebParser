@@ -126,6 +126,60 @@ func (h *HTMLData) Flatten() *HTMLData {
 	}
 	return output
 }
+func (h *HTMLData) FlattenFull() *HTMLData {
+	output := &HTMLData{
+		Tag:        h.Tag,
+		Attributes: h.Attributes,
+		TextData:   h.TextData,
+	}
+	for _, c := range h.Child {
+		for k, v := range c.Attributes {
+			if _, ok := output.Attributes[k]; !ok {
+				if len(v) > 0 {
+					output.Attributes[k] = v
+				}
+			}else{
+				output.Attributes[k] += fmt.Sprintf("%s,",v)
+			}
+		}
+		output.TextData += c.TextData
+		d := c.FlattenFull()
+		output.TextData += d.TextData
+		for k, v := range d.Attributes {
+			if _, ok := output.Attributes[k]; !ok {
+				if len(v) > 0 {
+					output.Attributes[k] = v
+				}
+			}else{
+				output.Attributes[k] += fmt.Sprintf("%s,",v)
+			}
+		}
+	}
+	for _, c := range h.Sibling {
+		for k, v := range c.Attributes {
+			if _, ok := output.Attributes[k]; !ok {
+				if len(v) > 0 {
+					output.Attributes[k] = v
+				}
+			}else{
+				output.Attributes[k] += fmt.Sprintf("%s,",v)
+			}
+		}
+		output.TextData += c.TextData
+		d := c.FlattenFull()
+		output.TextData += d.TextData
+		for k, v := range d.Attributes {
+			if _, ok := output.Attributes[k]; !ok {
+				if len(v) > 0 {
+					output.Attributes[k] = v
+				}
+			}else{
+				output.Attributes[k] += fmt.Sprintf("%s,",v)
+			}
+		}
+	}
+	return output
+}
 
 func (h *HTMLData) FindTag(tag string) []*HTMLData {
 	var output []*HTMLData
@@ -150,7 +204,11 @@ func Reverse(data []*HTMLData) []*HTMLData {
 
 func (h *HTMLData) FindAttribute(attribute, value string) []*HTMLData {
 	var output []*HTMLData
-	if found, ok := h.Attributes[attribute]; ok {
+	if attribute == "text"{
+		if strings.Contains(h.TextData, value) {
+			output = append(output, h)
+		}
+	}else if found, ok := h.Attributes[attribute]; ok {
 		if value == "" {
 			output = append(output, h)
 		} else {
@@ -172,7 +230,11 @@ func (h *HTMLData) FindAttribute(attribute, value string) []*HTMLData {
 func (h *HTMLData) Find(tag, attribute, value string) []*HTMLData {
 	var output []*HTMLData
 	if h.Tag == tag {
-		if found, ok := h.Attributes[attribute]; ok {
+		if attribute == "text"{
+			if strings.Contains(h.TextData, value) {
+				output = append(output, h)
+			}
+		}else if found, ok := h.Attributes[attribute]; ok {
 			if value == "" {
 				output = append(output, h)
 			} else {
@@ -190,4 +252,42 @@ func (h *HTMLData) Find(tag, attribute, value string) []*HTMLData {
 		output = append(output, s.Find(tag, attribute, value)...)
 	}
 	return output
+}
+
+type HTMLSearch struct{
+	Tag string `json:"tag"`
+	Attribute string `json:"attribute"`
+	Value string `json:"value"`
+	KeepParentData bool `json:"keep_parent_data"`
+}
+
+func (h *HTMLData) AdvanceSearchFind(search HTMLSearch) []*HTMLData {
+	if search.Tag != ""{
+			if search.Attribute != "" && search.Value != ""{
+				return h.Find(search.Tag, search.Attribute, search.Value)
+			}else{
+				return h.FindTag(search.Tag)
+			}
+
+	}else if search.Attribute != "" && search.Value != ""{
+		return h.FindAttribute(search.Attribute,search.Value)
+	}
+	return []*HTMLData{}
+}
+
+func (h *HTMLData) AdvanceSearches(search []HTMLSearch) []*HTMLData {
+	currentData := []*HTMLData{h}
+	for _,s := range search{
+		nextData := []*HTMLData{}
+		for _,d := range currentData{
+			nextData = append(nextData ,d.AdvanceSearchFind(s)...)
+		}
+		if s.KeepParentData && len(nextData) > 0{
+			currentData = append(currentData ,nextData...)
+		}else{
+			currentData = nextData
+		}
+
+	}
+	return currentData
 }

@@ -2,14 +2,15 @@ package WebParser
 
 import (
 	"fmt"
+	"go.uber.org/zap"
+	"golang.org/x/net/html"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
-
-	"go.uber.org/zap"
-	"golang.org/x/net/html"
+	"time"
 )
 
 type Parser struct {
@@ -62,9 +63,14 @@ func (p *Parser) Get(url string) error {
 	return nil
 }
 
-func (p *Parser) Download(url, path string) error {
-	if _, err := os.Stat(url); err == nil {
+func (p *Parser) Download(url, path string,delay int) error {
+	if _, err := os.Stat(path); err == nil {
 		return nil
+	}
+	dir,fileName := filepath.Split(path)
+	err := os.MkdirAll(dir,0755)
+	if err != nil{
+		return err
 	}
 	response, err := http.Get(url)
 	if err != nil {
@@ -85,6 +91,7 @@ func (p *Parser) Download(url, path string) error {
 		p.Logger.Error("failed saving image", zap.Error(err))
 		return err
 	}
-	p.Logger.Debug("finished downloading image")
+	p.Logger.Debug(fmt.Sprintf("finished downloading %s/%s",filepath.Base(dir),fileName))
+	time.Sleep(time.Duration(delay) * time.Second)
 	return nil
 }
