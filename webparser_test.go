@@ -66,5 +66,42 @@ func TestSite(t *testing.T) {
 		DownloadPath: "github",
 	}
 	newSite.Load("https://github.com/TheBlockNinja/WebParser")
-	newSite.Download(LinkTypeImage,"href")
+	newSite.Download(LinkTypeImage,"href","")
+}
+
+func TestSiteLarge(t *testing.T) {
+	logger, _ := zap.NewProduction()
+	parser := NewParser(logger)
+	newSite := Site{
+		Name:         "Wiki",
+		URL:          "https://en.wikipedia.org/wiki/Wiki",
+		Parser:       parser,
+		MetaData:     []*SiteMetaData{
+			{
+				Type:           LinkTypeImage,
+				LinkTypes:      []string{"src"},
+				Search:         []HTMLSearch{
+					{
+						Tag:            "img",
+						Attribute:      "src",
+						Value:          "png",
+						KeepParentData: false,
+					},
+				},
+				FindAttributes: []string{"alt","src"},
+				Flatten:        false,
+				Attributes: 	[]map[string]string{},
+				Reverse:        false,
+			},
+		},
+		Recursive:    false,
+		MaxDepth:     1,
+		Delay:        1,
+		Reprocess:    false,
+		DownloadPath: "Wiki",
+	}
+	newSite.Load("https://en.wikipedia.org/wiki/Wiki")
+	newSite.LoadMetaData()
+	newSite.Download(LinkTypeImage,"alt",".png")
+	print()
 }
