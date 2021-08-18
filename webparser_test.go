@@ -33,3 +33,38 @@ func TestGithub(t *testing.T) {
 		}
 	}
 }
+
+func TestSite(t *testing.T) {
+	logger, _ := zap.NewProduction()
+	parser := NewParser(logger)
+	newSite := Site{
+		Name:         "Github",
+		URL:          "https://github.com/TheBlockNinja/WebParser",
+		Parser:       parser,
+		MetaData:     []*SiteMetaData{
+			{
+				Type:           LinkTypeImage,
+				LinkTypes:      []string{"href"},
+				Search:         []HTMLSearch{
+					{
+						Tag:            "",
+						Attribute:      "rel",
+						Value:          "fluid-icon",
+						KeepParentData: false,
+					},
+				},
+				FindAttributes: []string{"title","href"},
+				Flatten:        false,
+				Attributes: [	]map[string]string{},
+				Reverse:        false,
+			},
+		},
+		Recursive:    false,
+		MaxDepth:     0,
+		Delay:        0,
+		Reprocess:    false,
+		DownloadPath: "github",
+	}
+	newSite.Load("https://github.com/TheBlockNinja/WebParser")
+	newSite.Download(LinkTypeImage,"href")
+}
