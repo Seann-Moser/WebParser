@@ -68,9 +68,11 @@ func (p *Parser) Download(url, path string,delay int) error {
 		return nil
 	}
 	dir,fileName := filepath.Split(path)
-	err := os.MkdirAll(dir,0755)
-	if err != nil{
-		return err
+	if dir != ""{
+		err := os.MkdirAll(dir,0755)
+		if err != nil{
+			return err
+		}
 	}
 	response, err := http.Get(url)
 	if err != nil {
