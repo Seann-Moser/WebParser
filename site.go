@@ -181,7 +181,7 @@ func (s *Site)NeedToProcess() bool{
 	return true
 }
 
-func (s *Site) Download(linkType,nameAttribute string) error{
+func (s *Site) Download(linkType,nameAttribute,ext string) error{
 	switch  linkType{
 	case LinkTypeImage:
 		links,err := s.GetLinks(linkType,nameAttribute)
@@ -189,7 +189,7 @@ func (s *Site) Download(linkType,nameAttribute string) error{
 			return err
 		}
 		for _,l := range links{
-			err = multierr.Append(err, s.Parser.Download(l.Value,filepath.Join(s.DownloadPath,s.Name,l.Key), s.Delay))
+			err = multierr.Append(err, s.Parser.Download(l.Value,filepath.Join(s.DownloadPath,s.Name,l.Key)+ext, s.Delay))
 		}
 		return err
 	}

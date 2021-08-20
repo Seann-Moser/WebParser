@@ -79,6 +79,9 @@ func (h *HTMLData) GetLink(attribute []string, p *Parser) (string, error) {
 	if link == "" {
 		return "", fmt.Errorf("failed to find attribute %s", attribute)
 	}
+	if strings.HasPrefix(link,"//"){
+		return "https:" + link, nil
+	}
 	if strings.Contains(link, "http") {
 		links := "http" + strings.Split(link, "http")[1]
 		if strings.Contains(links, "?") {
