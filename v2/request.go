@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -125,4 +126,34 @@ func (r *HTMLSourceRequest) Process(depth int, currentTag string) (*HtmlData, er
 			RootHtmlData.TextData = strings.TrimSpace(RootHtmlData.TextData + token.Data)
 		}
 	}
+}
+
+func Download(url, path string) error {
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	}
+	dir, _ := filepath.Split(path)
+	if dir != "" {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	response, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed downloading file from url: %s", url)
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed creating file path for file %s", path)
+	}
+	defer func() { _ = file.Close() }()
+
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return fmt.Errorf("failed saving image")
+	}
+	return nil
 }
