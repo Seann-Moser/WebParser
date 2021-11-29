@@ -86,11 +86,18 @@ func isInArray(v string, v1 []string) bool {
 	return false
 }
 
-func (h *HtmlData) getTags(tags []string) {
-
-}
-func (h *HtmlData) getAllTags(tags []string) []FlatData {
-	return nil
+func (h *HtmlData) getTags(tags []string) []*HtmlData {
+	var d []*HtmlData
+	if tags == nil || isInArray(h.Tag, tags) {
+		d = append(d, h)
+	}
+	for _, c := range h.Child {
+		d = append(d, c.getTags(tags)...)
+	}
+	for _, c := range h.Sibling {
+		d = append(d, c.getTags(tags)...)
+	}
+	return d
 }
 
 func (h *HtmlData) getAttributes(attributes []string) map[string]string {
@@ -104,6 +111,9 @@ func (h *HtmlData) getAllAttributes(attributes []string) []FlatData {
 func (h *HtmlData) Search(tags []string, attributes map[string]string) []*HtmlData {
 	output := []*HtmlData{}
 	if tags == nil || isInArray(h.Tag, tags) {
+		if len(attributes) == 0 {
+			output = append(output, h)
+		}
 		for k, v := range attributes {
 			if attribute, found := h.Attributes[k]; found {
 				foundValue, err := regexp.MatchString(v, attribute)
