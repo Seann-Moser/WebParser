@@ -1,8 +1,10 @@
 package v2
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/patrickmn/go-cache"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -18,6 +20,7 @@ import (
 type HTMLSourceRequest struct {
 	client    *http.Client
 	tokenizer *html.Tokenizer
+	Cache     *cache.Cache
 }
 
 func NewHTMLSourceRequest() *HTMLSourceRequest {
@@ -26,6 +29,57 @@ func NewHTMLSourceRequest() *HTMLSourceRequest {
 			//Timeout: 5,
 		},
 	}
+}
+
+func (r *HTMLSourceRequest) GetSourceCode(searchURL string, method string, body []byte) (*HtmlData, error) {
+	if r.Cache == nil {
+		r.Cache = cache.New(5*time.Minute, 10*time.Minute)
+	}
+
+	bytes, found := r.Cache.Get(searchURL)
+	if found {
+		switch b := bytes.(type) {
+		case *HtmlData:
+			return b, nil
+		}
+	}
+	httpRequestHandler := NewHTMLSourceRequest()
+	u, err := url.Parse(searchURL)
+	if err != nil {
+		return nil, err
+	}
+	err = httpRequestHandler.FullRequest(u, method, body)
+	if err != nil {
+		return nil, err
+	}
+	pageSource, err := httpRequestHandler.Process(0, "")
+	if err != nil {
+		return nil, err
+	}
+	r.Cache.Set(searchURL, pageSource, cache.DefaultExpiration)
+	return pageSource, nil
+}
+
+func (r *HTMLSourceRequest) FullRequest(url *url.URL, method string, body []byte) error {
+	req, err := http.NewRequest(method, url.String(), bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("bad status code")
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respStr, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	respReader := strings.NewReader(string(respStr))
+	r.tokenizer = html.NewTokenizer(respReader)
+	return nil
 }
 
 func (r *HTMLSourceRequest) Request(url url.URL) error {
@@ -49,6 +103,7 @@ func (r *HTMLSourceRequest) Request(url url.URL) error {
 	r.tokenizer = html.NewTokenizer(respReader)
 	return nil
 }
+
 func (r *HTMLSourceRequest) Download(url, path string, delay int) error {
 	if _, err := os.Stat(path); err == nil {
 		return nil
@@ -77,7 +132,6 @@ func (r *HTMLSourceRequest) Download(url, path string, delay int) error {
 		//p.Logger.Error("failed saving image", zap.Error(err))
 		return err
 	}
-	//p.Logger.Debug(fmt.Sprintf("finished downloading %s/%s",filepath.Base(dir),fileName))
 	time.Sleep(time.Duration(delay) * time.Second)
 	return nil
 }
