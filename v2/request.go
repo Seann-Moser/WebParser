@@ -7,6 +7,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,9 +19,10 @@ import (
 )
 
 type HTMLSourceRequest struct {
-	client    *http.Client
-	tokenizer *html.Tokenizer
-	Cache     *cache.Cache
+	client       *http.Client
+	tokenizer    *html.Tokenizer
+	Cache        *cache.Cache
+	SleepTimeMax int
 }
 
 func NewHTMLSourceRequest() *HTMLSourceRequest {
@@ -28,6 +30,15 @@ func NewHTMLSourceRequest() *HTMLSourceRequest {
 		client: &http.Client{
 			//Timeout: 5,
 		},
+	}
+}
+
+func NewHTMLSourceRequestWithSleep(sleep int) *HTMLSourceRequest {
+	return &HTMLSourceRequest{
+		client: &http.Client{
+			//Timeout: 5,
+		},
+		SleepTimeMax: sleep,
 	}
 }
 
@@ -57,9 +68,16 @@ func (r *HTMLSourceRequest) GetSourceCode(searchURL string, method string, body 
 		return nil, err
 	}
 	r.Cache.Set(searchURL, pageSource, cache.DefaultExpiration)
+	r.wait()
 	return pageSource, nil
 }
-
+func (r *HTMLSourceRequest) wait() {
+	if r.SleepTimeMax > 0 {
+		rand.Seed(time.Now().Unix())
+		min := rand.Intn(r.SleepTimeMax)
+		time.Sleep(time.Duration(min) * time.Second)
+	}
+}
 func (r *HTMLSourceRequest) FullRequest(url *url.URL, method string, body []byte) error {
 	req, err := http.NewRequest(method, url.String(), bytes.NewBuffer(body))
 	if err != nil {
@@ -79,6 +97,7 @@ func (r *HTMLSourceRequest) FullRequest(url *url.URL, method string, body []byte
 	}
 	respReader := strings.NewReader(string(respStr))
 	r.tokenizer = html.NewTokenizer(respReader)
+	r.wait()
 	return nil
 }
 
@@ -101,10 +120,11 @@ func (r *HTMLSourceRequest) Request(url url.URL) error {
 	}
 	respReader := strings.NewReader(string(respStr))
 	r.tokenizer = html.NewTokenizer(respReader)
+	r.wait()
 	return nil
 }
 
-func (r *HTMLSourceRequest) Download(url, path string, delay int) error {
+func (r *HTMLSourceRequest) Download(url, path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return nil
 	}
@@ -132,7 +152,7 @@ func (r *HTMLSourceRequest) Download(url, path string, delay int) error {
 		//p.Logger.Error("failed saving image", zap.Error(err))
 		return err
 	}
-	time.Sleep(time.Duration(delay) * time.Second)
+	r.wait()
 	return nil
 }
 

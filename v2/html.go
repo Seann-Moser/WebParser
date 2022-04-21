@@ -14,7 +14,6 @@ type HtmlData struct {
 	Child      []*HtmlData       `json:"children"`
 	Sibling    []*HtmlData       `json:"siblings"`
 }
-
 type FlatData struct {
 	Tag        string            `json:"tag"`
 	Attributes map[string]string `json:"attributes"`
@@ -58,20 +57,48 @@ func (f *FlatData) FindLinks(baseLink string, linkAttributes []string) (string, 
 	return "", nil
 }
 
-func (h *HtmlData) Flatten(tags []string) []FlatData {
-	var flatD []FlatData
+func (h *HtmlData) Flatten(tags []string) *HtmlData {
+	var flatD *HtmlData
 	if tags == nil || isInArray(h.Tag, tags) {
-		flatD = append(flatD, FlatData{
+		flatD = &HtmlData{
 			Tag:        h.Tag,
 			Attributes: h.Attributes,
 			TextData:   h.TextData,
-		})
+		}
 	}
 	for _, c := range h.Child {
-		flatD = append(flatD, c.Flatten(tags)...)
+		tmp := c.Flatten(tags)
+		if len(tmp.TextData) > 0 {
+			if len(flatD.TextData) == 0 {
+				flatD.TextData = tmp.TextData
+			} else {
+				flatD.TextData += "---" + tmp.TextData
+			}
+		}
+
+		for k, v := range tmp.Attributes {
+			if len(v) > 0 {
+				if len(flatD.Attributes[k]) == 0 {
+					flatD.Attributes[k] = v
+				} else {
+					flatD.Attributes[k] += "," + v
+				}
+			}
+
+		}
 	}
 	for _, c := range h.Sibling {
-		flatD = append(flatD, c.Flatten(tags)...)
+		tmp := c.Flatten(tags)
+		if len(tmp.TextData) > 0 {
+			if len(flatD.TextData) == 0 {
+				flatD.TextData = tmp.TextData
+			} else {
+				flatD.TextData += "---" + tmp.TextData
+			}
+		}
+		for k, v := range tmp.Attributes {
+			flatD.Attributes[k] += "," + v
+		}
 	}
 
 	return flatD
