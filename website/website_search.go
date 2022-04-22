@@ -7,6 +7,8 @@ const (
 	TypeAttribute = "attribute"
 )
 
+// Search is used to build a parser that gets data from a website
+// is an object that can be loaded into the db using QueryHelper
 type Search struct {
 	SiteID          string `json:"site_id" db:"site_id" table:"primary" where:"=" join_name:"id"`
 	Type            string `json:"type" db:"type" table:"primary" can_update:"true"`
@@ -21,7 +23,7 @@ type Search struct {
 	OnlyRemap       bool   `json:"only_remap" db:"only_remap" can_update:"true"`
 }
 
-type CombinedSearch struct {
+type combinedSearch struct {
 	Tags         []string
 	Attributes   map[string]string
 	RemapValues  map[string]string
@@ -31,8 +33,8 @@ type CombinedSearch struct {
 	SkipRemap    bool `json:"skip_remap"`
 }
 
-func search(m map[string][]*Search, currentOrder int) *CombinedSearch {
-	combinedSearch := &CombinedSearch{
+func search(m map[string][]*Search, currentOrder int) *combinedSearch {
+	combinedSearch := &combinedSearch{
 		Tags:         []string{},
 		Attributes:   map[string]string{},
 		RemapValues:  map[string]string{},
@@ -44,58 +46,47 @@ func search(m map[string][]*Search, currentOrder int) *CombinedSearch {
 
 	for _, t := range tagList {
 		if t.Order == currentOrder {
-			if t.OnlyRemap {
-				if len(t.InternalTagName) > 0 {
-					combinedSearch.RemapValues[t.Tag] = t.InternalTagName
-				}
-				continue
-			}
-			combinedSearch.Tags = append(combinedSearch.Tags, t.Tag)
-			if t.UseChildData {
-				combinedSearch.UseChildData = t.UseChildData
-			}
-			if t.ForwardData {
-				combinedSearch.ForwardData = t.ForwardData
-			}
-			if t.SkipRemap {
-				combinedSearch.SkipRemap = t.SkipRemap
-			}
-			if t.Flatten {
-				combinedSearch.Flatten = t.Flatten
-			}
+			t.updateCombinedSearch(combinedSearch)
 		}
-
 	}
 	for _, t := range attributeList {
-
 		if t.Order == currentOrder {
-			if t.OnlyRemap {
-				if len(t.InternalTagName) > 0 {
-					combinedSearch.RemapValues[t.Tag] = t.InternalTagName
-				}
-				continue
-			}
-			combinedSearch.Attributes[t.Tag] = t.TagValue
-			if t.UseChildData {
-				combinedSearch.UseChildData = t.UseChildData
-			}
-			if t.ForwardData {
-				combinedSearch.ForwardData = t.ForwardData
-			}
-			if t.SkipRemap {
-				combinedSearch.SkipRemap = t.SkipRemap
-			}
-			if t.Flatten {
-				combinedSearch.Flatten = t.Flatten
-			}
-			if len(t.InternalTagName) > 0 {
-				combinedSearch.RemapValues[t.Tag] = t.InternalTagName
-			}
-
+			t.updateCombinedSearch(combinedSearch)
 		}
 	}
 
 	return combinedSearch
+}
+
+func (s *Search) updateCombinedSearch(cs *combinedSearch) {
+	if s.OnlyRemap {
+		if len(s.InternalTagName) > 0 {
+			cs.RemapValues[s.Tag] = s.InternalTagName
+		}
+		return
+	}
+	switch s.Type {
+	case TypeAttribute:
+		cs.Attributes[s.Tag] = s.TagValue
+	case TypeTag:
+		cs.Tags = append(cs.Tags, s.Tag)
+	}
+
+	if s.UseChildData {
+		cs.UseChildData = s.UseChildData
+	}
+	if s.ForwardData {
+		cs.ForwardData = s.ForwardData
+	}
+	if s.SkipRemap {
+		cs.SkipRemap = s.SkipRemap
+	}
+	if s.Flatten {
+		cs.Flatten = s.Flatten
+	}
+	if len(s.InternalTagName) > 0 {
+		cs.RemapValues[s.Tag] = s.InternalTagName
+	}
 }
 
 func separate(searchList []*Search) (map[string][]*Search, int) {

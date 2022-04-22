@@ -3,7 +3,6 @@ package v2
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/patrickmn/go-cache"
 	"io"
 	"io/ioutil"
@@ -25,6 +24,7 @@ type HTMLSourceRequest struct {
 	SleepTimeMax int
 }
 
+// NewHTMLSourceRequest creates a new source request with a http client
 func NewHTMLSourceRequest() *HTMLSourceRequest {
 	return &HTMLSourceRequest{
 		client: &http.Client{
@@ -33,6 +33,7 @@ func NewHTMLSourceRequest() *HTMLSourceRequest {
 	}
 }
 
+// NewHTMLSourceRequestWithSleep creates a new source request with a http client with a sleep timeout
 func NewHTMLSourceRequestWithSleep(sleep int) *HTMLSourceRequest {
 	return &HTMLSourceRequest{
 		client: &http.Client{
@@ -42,6 +43,7 @@ func NewHTMLSourceRequestWithSleep(sleep int) *HTMLSourceRequest {
 	}
 }
 
+// GetSourceCode get source code from webpage
 func (r *HTMLSourceRequest) GetSourceCode(searchURL string, method string, body []byte) (*HtmlData, error) {
 	if r.Cache == nil {
 		r.Cache = cache.New(5*time.Minute, 10*time.Minute)
@@ -59,11 +61,11 @@ func (r *HTMLSourceRequest) GetSourceCode(searchURL string, method string, body 
 	if err != nil {
 		return nil, err
 	}
-	err = httpRequestHandler.FullRequest(u, method, body)
+	err = httpRequestHandler.fullRequest(u, method, body)
 	if err != nil {
 		return nil, err
 	}
-	pageSource, err := httpRequestHandler.Process(0, "")
+	pageSource, err := httpRequestHandler.process(0, "")
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +80,9 @@ func (r *HTMLSourceRequest) wait() {
 		time.Sleep(time.Duration(min) * time.Second)
 	}
 }
-func (r *HTMLSourceRequest) FullRequest(url *url.URL, method string, body []byte) error {
+
+// fullRequest sets up tokenizer
+func (r *HTMLSourceRequest) fullRequest(url *url.URL, method string, body []byte) error {
 	req, err := http.NewRequest(method, url.String(), bytes.NewBuffer(body))
 	if err != nil {
 		return err
@@ -101,29 +105,7 @@ func (r *HTMLSourceRequest) FullRequest(url *url.URL, method string, body []byte
 	return nil
 }
 
-func (r *HTMLSourceRequest) Request(url url.URL) error {
-	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
-	if err != nil {
-		return err
-	}
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("bad status code")
-	}
-	defer func() { _ = resp.Body.Close() }()
-	respStr, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	respReader := strings.NewReader(string(respStr))
-	r.tokenizer = html.NewTokenizer(respReader)
-	r.wait()
-	return nil
-}
-
+// Download will download a file given a url to a given path
 func (r *HTMLSourceRequest) Download(url, path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return nil
@@ -156,7 +138,7 @@ func (r *HTMLSourceRequest) Download(url, path string) error {
 	return nil
 }
 
-func (r *HTMLSourceRequest) Process(depth int, currentTag string) (*HtmlData, error) {
+func (r *HTMLSourceRequest) process(depth int, currentTag string) (*HtmlData, error) {
 	RootHtmlData := &HtmlData{
 		Tag:        currentTag,
 		Attributes: map[string]string{},
@@ -185,7 +167,7 @@ func (r *HTMLSourceRequest) Process(depth int, currentTag string) (*HtmlData, er
 			RootHtmlData.Sibling = append(RootHtmlData.Sibling, t)
 		case html.StartTagToken:
 			depth += 1
-			child, err := r.Process(depth, token.Data)
+			child, err := r.process(depth, token.Data)
 			for _, v := range token.Attr {
 				child.Attributes[v.Key] = v.Val
 			}
@@ -194,40 +176,9 @@ func (r *HTMLSourceRequest) Process(depth int, currentTag string) (*HtmlData, er
 			}
 			RootHtmlData.Child = append(RootHtmlData.Child, child)
 		case html.EndTagToken:
-			depth -= 1
 			return RootHtmlData, nil
 		case html.TextToken:
 			RootHtmlData.TextData = strings.TrimSpace(RootHtmlData.TextData + token.Data)
 		}
 	}
-}
-
-func Download(url, path string) error {
-	if _, err := os.Stat(path); err == nil {
-		return nil
-	}
-	dir, _ := filepath.Split(path)
-	if dir != "" {
-		err := os.MkdirAll(dir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-	response, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("failed downloading file from url: %s", url)
-	}
-	defer func() { _ = response.Body.Close() }()
-
-	file, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("failed creating file path for file %s", path)
-	}
-	defer func() { _ = file.Close() }()
-
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return fmt.Errorf("failed saving image")
-	}
-	return nil
 }

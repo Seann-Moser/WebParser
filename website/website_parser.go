@@ -3,10 +3,13 @@ package website
 import (
 	"fmt"
 	v2 "github.com/TheBlockNinja/WebParser/v2"
+	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 )
 
+// Parser an object that combines multiple search's to get more specific data
+// This can also be used with QueryHelper
 type Parser struct {
 	ID         string    `json:"id" db:"id" join_name:"id"`
 	Name       string    `json:"name" joinable:"false"`
@@ -14,14 +17,17 @@ type Parser struct {
 	SearchList []*Search `json:"search_list" skip_table:"true"`
 }
 
-func NewWebParser(u string, searchData []*Search) (*Parser, error) {
+// NewWebParser creates a new parser from a list of search data
+func NewWebParser(name, u string, searchData []*Search) (*Parser, error) {
 	return &Parser{
-		Name:       "default",
+		ID:         uuid.New().String(),
+		Name:       name,
 		WebsiteURL: u,
 		SearchList: searchData,
 	}, nil
 }
 
+// Parse will take in an htmlSourceRequest and an url to retrieve information from that site
 func (wp *Parser) Parse(SourceReq *v2.HTMLSourceRequest, searchURL string) ([]*v2.HtmlData, []map[string]string, error) {
 	u, err := url.Parse(searchURL)
 	if err != nil {
@@ -64,7 +70,7 @@ func (wp *Parser) Parse(SourceReq *v2.HTMLSourceRequest, searchURL string) ([]*v
 	return output, remappedOutput, nil
 }
 
-func remap(d *v2.HtmlData, combinedSearch *CombinedSearch, baseUrl *url.URL) map[string]string {
+func remap(d *v2.HtmlData, combinedSearch *combinedSearch, baseUrl *url.URL) map[string]string {
 	remapped := map[string]string{}
 	if combinedSearch.SkipRemap {
 		return remapped
@@ -84,7 +90,7 @@ func remap(d *v2.HtmlData, combinedSearch *CombinedSearch, baseUrl *url.URL) map
 	return remapped
 }
 
-func addKeyIfExists(combinedSearch *CombinedSearch, key, value string, remap map[string]string) {
+func addKeyIfExists(combinedSearch *combinedSearch, key, value string, remap map[string]string) {
 	if len(value) == 0 {
 		return
 	}
