@@ -8,19 +8,16 @@ import (
 )
 
 type Parser struct {
-	Name       string `json:"name"`
-	WebsiteURL *url.URL
-	SearchList []*Search
+	ID         string    `json:"id" db:"id" join_name:"id"`
+	Name       string    `json:"name" joinable:"false"`
+	WebsiteURL string    `json:"website_url" where:"=" joinable:"false"`
+	SearchList []*Search `json:"search_list" skip_table:"true"`
 }
 
 func NewWebParser(u string, searchData []*Search) (*Parser, error) {
-	tmpUrl, err := url.Parse(u)
-	if err != nil {
-		return nil, err
-	}
 	return &Parser{
 		Name:       "default",
-		WebsiteURL: tmpUrl,
+		WebsiteURL: u,
 		SearchList: searchData,
 	}, nil
 }
@@ -30,8 +27,12 @@ func (wp *Parser) Parse(SourceReq *v2.HTMLSourceRequest, searchURL string) ([]*v
 	if err != nil {
 		return nil, nil, err
 	}
-	if u.Host != wp.WebsiteURL.Host {
-		return nil, nil, fmt.Errorf("host parser(%s) does not match search url: %s", wp.WebsiteURL.Host, u.Host)
+	tmpUrl, err := url.Parse(wp.WebsiteURL)
+	if err != nil {
+		return nil, nil, err
+	}
+	if u.Host != tmpUrl.Host {
+		return nil, nil, fmt.Errorf("host parser(%s) does not match search url: %s", tmpUrl.Host, u.Host)
 	}
 	source, err := SourceReq.GetSourceCode(searchURL, http.MethodGet, nil)
 	if err != nil {
