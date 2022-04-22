@@ -8,16 +8,17 @@ const (
 )
 
 type Search struct {
-	Type            string `json:"type" db:"type"`
-	Tag             string `json:"tag" db:"tag"`
-	TagValue        string `json:"tag_value" db:"tag_value"`
-	Order           int    `json:"order" db:"order"`
-	InternalTagName string `json:"internal_tag_name" db:"internal_tag_name"`
-	ForwardData     bool   `json:"forward_data"`
-	UseChildData    bool   `json:"use_child_data" db:"use_child_data"`
-	Flatten         bool   `json:"flatten" db:"flatten"`
-	SkipRemap       bool   `json:"skip_remap" db:"skip_remap"`
-	OnlyRemap       bool   `json:"only_remap" db:"only_remap"`
+	SiteID          string `json:"site_id" db:"site_id" table:"primary" where:"=" join_name:"id"`
+	Type            string `json:"type" db:"type" table:"primary" can_update:"true"`
+	Tag             string `json:"tag" db:"tag" table:"primary" can_update:"true"`
+	TagValue        string `json:"tag_value" db:"tag_value" can_update:"true"`
+	Order           int    `json:"order" db:"order" table:"primary" can_update:"true"`
+	InternalTagName string `json:"internal_tag_name" db:"internal_tag_name" can_update:"true"`
+	ForwardData     bool   `json:"forward_data" can_update:"true"`
+	UseChildData    bool   `json:"use_child_data" db:"use_child_data" can_update:"true"`
+	Flatten         bool   `json:"flatten" db:"flatten" can_update:"true"`
+	SkipRemap       bool   `json:"skip_remap" db:"skip_remap" can_update:"true"`
+	OnlyRemap       bool   `json:"only_remap" db:"only_remap" can_update:"true"`
 }
 
 type CombinedSearch struct {

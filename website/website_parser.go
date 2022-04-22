@@ -7,28 +7,25 @@ import (
 	"net/url"
 )
 
-type Site struct {
-}
-
-type WebsiteParser struct {
+type Parser struct {
 	Name       string `json:"name"`
 	WebsiteURL *url.URL
 	SearchList []*Search
 }
 
-func NewWebParser(u string, searchData []*Search) (*WebsiteParser, error) {
+func NewWebParser(u string, searchData []*Search) (*Parser, error) {
 	tmpUrl, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
-	return &WebsiteParser{
+	return &Parser{
 		Name:       "default",
 		WebsiteURL: tmpUrl,
 		SearchList: searchData,
 	}, nil
 }
 
-func (wp *WebsiteParser) Parse(SourceReq *v2.HTMLSourceRequest, searchURL string) ([]*v2.HtmlData, []map[string]string, error) {
+func (wp *Parser) Parse(SourceReq *v2.HTMLSourceRequest, searchURL string) ([]*v2.HtmlData, []map[string]string, error) {
 	u, err := url.Parse(searchURL)
 	if err != nil {
 		return nil, nil, err
