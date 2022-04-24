@@ -2,7 +2,7 @@ package website
 
 import (
 	"fmt"
-	v2 "github.com/TheBlockNinja/WebParser/v2"
+	v2 "github.com/Seann-Moser/WebParser/v2"
 	"github.com/google/uuid"
 	"net/http"
 	"net/url"

@@ -7,7 +7,7 @@ This is an HTML parser to act like a simple version pythons BS4.
 ```go
     logger, err := zap.NewProduction()
     parser := NewParser(logger)
-    err = parser.Get("https://github.com/TheBlockNinja/WebParser")
+    err = parser.Get("https://github.com/Seann-Moser/WebParser")
     if err != nil {
         parser.Logger.Error("failed load website source", zap.Error(err))
     }
