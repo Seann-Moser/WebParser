@@ -1,4 +1,4 @@
-module github.com/TheBlockNinja/WebParser
+module github.com/Seann-Moser/WebParser
 
 go 1.16
 
