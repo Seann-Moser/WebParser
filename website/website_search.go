@@ -14,9 +14,9 @@ type Search struct {
 	Type            string `json:"type" db:"type" table:"primary" can_update:"true"`
 	Tag             string `json:"tag" db:"tag" table:"primary" can_update:"true"`
 	TagValue        string `json:"tag_value" db:"tag_value" can_update:"true"`
-	Order           int    `json:"order" db:"order" table:"primary" can_update:"true"`
+	Order           int    `json:"search_order" db:"search_order" table:"primary" can_update:"true"`
 	InternalTagName string `json:"internal_tag_name" db:"internal_tag_name" can_update:"true"`
-	ForwardData     bool   `json:"forward_data" can_update:"true"`
+	ForwardData     bool   `json:"forward_data" db:"forward_data" can_update:"true"`
 	UseChildData    bool   `json:"use_child_data" db:"use_child_data" can_update:"true"`
 	Flatten         bool   `json:"flatten" db:"flatten" can_update:"true"`
 	SkipRemap       bool   `json:"skip_remap" db:"skip_remap" can_update:"true"`
