@@ -106,36 +106,47 @@ func (r *HTMLSourceRequest) fullRequest(url *url.URL, method string, body []byte
 }
 
 // Download will download a file given a url to a given path
-func (r *HTMLSourceRequest) Download(url, path string) error {
+func (r *HTMLSourceRequest) Download(url, path string) (string, error) {
 	if _, err := os.Stat(path); err == nil {
-		return nil
+		return "", nil
 	}
 	dir, _ := filepath.Split(path)
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		return err
+		return "", nil
 	}
 	response, err := http.Get(url)
 	if err != nil {
 		//p.Logger.Error(fmt.Sprintf("failed downloading file from url: %s", url), zap.Error(err))
-		return err
+		return "", nil
 	}
 	defer func() { _ = response.Body.Close() }()
+	if strings.HasPrefix(path, "/") {
+		cd := response.Header.Get("content-disposition")
+		if cd != "" {
+			i := strings.Index(cd, "filename")
+			fname := strings.Split(cd[i:], "=")
+			filename := strings.ReplaceAll(fname[1], `"`, "")
+			path += filename
+		} else if cd = response.Header.Get("filename"); cd != "" {
+			path += cd
+		}
+	}
 
 	file, err := os.Create(path)
 	if err != nil && err != os.ErrExist {
 		//	p.Logger.Error(fmt.Sprintf("failed creating file path for file %s", path), zap.Error(err))
-		return err
+		return "", nil
 	}
 	defer func() { _ = file.Close() }()
 
 	_, err = io.Copy(file, response.Body)
 	if err != nil {
 		//p.Logger.Error("failed saving image", zap.Error(err))
-		return err
+		return "", nil
 	}
 	r.wait()
-	return nil
+	return path, nil
 }
 
 func (r *HTMLSourceRequest) process(depth int, currentTag string) (*HtmlData, error) {
