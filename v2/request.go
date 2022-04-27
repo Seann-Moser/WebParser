@@ -123,7 +123,7 @@ func (r *HTMLSourceRequest) Download(url, path string) error {
 	defer func() { _ = response.Body.Close() }()
 
 	file, err := os.Create(path)
-	if err != nil {
+	if err != nil && err != os.ErrExist {
 		//	p.Logger.Error(fmt.Sprintf("failed creating file path for file %s", path), zap.Error(err))
 		return err
 	}
