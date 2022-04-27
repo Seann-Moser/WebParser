@@ -11,7 +11,7 @@ const (
 // is an object that can be loaded into the db using QueryHelper
 type Search struct {
 	SiteID          string `json:"site_id" db:"site_id" table:"primary" where:"=" join_name:"id"`
-	Type            string `json:"type" db:"type" table:"primary" can_update:"true"`
+	Type            string `json:"search_type" db:"search_type" table:"primary" can_update:"true"`
 	Tag             string `json:"tag" db:"tag" table:"primary" can_update:"true"`
 	TagValue        string `json:"tag_value" db:"tag_value" can_update:"true"`
 	Order           int    `json:"search_order" db:"search_order" table:"primary" can_update:"true"`
