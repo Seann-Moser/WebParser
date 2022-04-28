@@ -2,6 +2,7 @@ package v2
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/patrickmn/go-cache"
 	"io"
@@ -53,7 +54,16 @@ func (r *HTMLSourceRequest) GetSourceCode(searchURL string, method string, body 
 	if found {
 		switch b := bytes.(type) {
 		case *HtmlData:
-			return b, nil
+			d := HtmlData{}
+			data, err := json.Marshal(b)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(data, &d)
+			if err != nil {
+				return nil, err
+			}
+			return &d, nil
 		}
 	}
 	httpRequestHandler := NewHTMLSourceRequest()
@@ -107,7 +117,7 @@ func (r *HTMLSourceRequest) fullRequest(url *url.URL, method string, body []byte
 
 // Download will download a file given a url to a given path
 func (r *HTMLSourceRequest) Download(url, path string) (string, error) {
-	if _, err := os.Stat(path); err == nil {
+	if info, err := os.Stat(path); err == nil && !info.IsDir() {
 		return "", nil
 	}
 	dir, _ := filepath.Split(path)
@@ -121,7 +131,7 @@ func (r *HTMLSourceRequest) Download(url, path string) (string, error) {
 		return "", nil
 	}
 	defer func() { _ = response.Body.Close() }()
-	if strings.HasPrefix(path, "/") {
+	if strings.HasSuffix(path, "/") {
 		cd := response.Header.Get("content-disposition")
 		if cd != "" {
 			i := strings.Index(cd, "filename")
