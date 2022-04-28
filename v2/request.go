@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -137,6 +138,10 @@ func (r *HTMLSourceRequest) Download(url, path string) (string, error) {
 			i := strings.Index(cd, "filename")
 			fname := strings.Split(cd[i:], "=")
 			filename := strings.ReplaceAll(fname[1], `"`, "")
+			reg, err := regexp.Compile("[/?%*:|\"<>]")
+			if err == nil {
+				filename = reg.ReplaceAllString(filename, "")
+			}
 			path += filename
 		} else if cd = response.Header.Get("filename"); cd != "" {
 			path += cd
