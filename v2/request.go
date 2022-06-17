@@ -91,6 +91,15 @@ func (r *HTMLSourceRequest) wait() {
 		time.Sleep(time.Duration(min) * time.Second)
 	}
 }
+func (r *HTMLSourceRequest) ProcessSourceCode(sourceCode string) (*HtmlData, error) {
+	respReader := strings.NewReader(sourceCode)
+	r.tokenizer = html.NewTokenizer(respReader)
+	pageSource, err := r.process(0, "")
+	if err != nil {
+		return nil, err
+	}
+	return pageSource, err
+}
 
 // fullRequest sets up tokenizer
 func (r *HTMLSourceRequest) fullRequest(url *url.URL, method string, body []byte) error {
@@ -103,6 +112,12 @@ func (r *HTMLSourceRequest) fullRequest(url *url.URL, method string, body []byte
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
+		defer func() { _ = resp.Body.Close() }()
+		respStr, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		println(string(respStr))
 		return errors.New("bad status code")
 	}
 	defer func() { _ = resp.Body.Close() }()
