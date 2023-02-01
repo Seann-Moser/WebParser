@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/patrickmn/go-cache"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -15,6 +14,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/patrickmn/go-cache"
 
 	"golang.org/x/net/html"
 )
@@ -76,7 +78,7 @@ func (r *HTMLSourceRequest) GetSourceCode(searchURL string, method string, body 
 	if err != nil {
 		return nil, err
 	}
-	pageSource, err := httpRequestHandler.process(0, "")
+	pageSource, err := httpRequestHandler.process(0, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +96,7 @@ func (r *HTMLSourceRequest) wait() {
 func (r *HTMLSourceRequest) ProcessSourceCode(sourceCode string) (*HtmlData, error) {
 	respReader := strings.NewReader(sourceCode)
 	r.tokenizer = html.NewTokenizer(respReader)
-	pageSource, err := r.process(0, "")
+	pageSource, err := r.process(0, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -179,8 +181,10 @@ func (r *HTMLSourceRequest) Download(url, path string) (string, error) {
 	return path, nil
 }
 
-func (r *HTMLSourceRequest) process(depth int, currentTag string) (*HtmlData, error) {
+func (r *HTMLSourceRequest) process(depth int, currentTag string, parent *HtmlData) (*HtmlData, error) {
 	RootHtmlData := &HtmlData{
+		ID:         uuid.New().String(),
+		Parent:     parent,
 		Tag:        currentTag,
 		Attributes: map[string]string{},
 		Sibling:    []*HtmlData{},
@@ -199,6 +203,7 @@ func (r *HTMLSourceRequest) process(depth int, currentTag string) (*HtmlData, er
 			}
 		case html.SelfClosingTagToken:
 			t := &HtmlData{
+				Parent:     parent,
 				Tag:        token.Data,
 				Attributes: map[string]string{},
 			}
@@ -208,7 +213,7 @@ func (r *HTMLSourceRequest) process(depth int, currentTag string) (*HtmlData, er
 			RootHtmlData.Sibling = append(RootHtmlData.Sibling, t)
 		case html.StartTagToken:
 			depth += 1
-			child, err := r.process(depth, token.Data)
+			child, err := r.process(depth, token.Data, RootHtmlData)
 			for _, v := range token.Attr {
 				child.Attributes[v.Key] = v.Val
 			}
