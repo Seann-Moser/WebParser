@@ -138,15 +138,22 @@ func (r *HTMLSourceRequest) Download(u, path string) (string, error) {
 	if info, err := os.Stat(path); err == nil && !info.IsDir() {
 		return "", nil
 	}
-	dir, _ := filepath.Split(path)
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		return "", err
-	}
 	endpoint, err := url.Parse(u)
 	if err != nil {
 		return "", err
 	}
+	if path == "" {
+		sp := strings.Split(endpoint.Path, "/")
+		path = sp[len(sp)-1]
+	}
+	dir, _ := filepath.Split(path)
+	if dir != "" {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	root := &url.URL{
 		Scheme: endpoint.Scheme,
 		Opaque: endpoint.Opaque,
