@@ -190,6 +190,9 @@ func (h *HtmlData) AddLinkInfo(baseLink string, linkAttributes []string) {
 		if link == "" {
 			continue
 		}
+		if strings.HasPrefix(link, "//") {
+			link = "https:" + link
+		}
 		u, err := url.Parse(link)
 		if err != nil {
 			continue

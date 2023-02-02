@@ -134,16 +134,30 @@ func (r *HTMLSourceRequest) fullRequest(url *url.URL, method string, body []byte
 }
 
 // Download will download a file given a url to a given path
-func (r *HTMLSourceRequest) Download(url, path string) (string, error) {
+func (r *HTMLSourceRequest) Download(u, path string) (string, error) {
 	if info, err := os.Stat(path); err == nil && !info.IsDir() {
 		return "", nil
 	}
 	dir, _ := filepath.Split(path)
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
-	response, err := http.Get(url)
+	endpoint, err := url.Parse(u)
+	if err != nil {
+		return "", err
+	}
+	root := &url.URL{
+		Scheme: endpoint.Scheme,
+		Opaque: endpoint.Opaque,
+		Host:   endpoint.Host,
+	}
+	req, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Referer", root.String())
+	response, err := r.client.Do(req)
 	if err != nil {
 		//p.Logger.Error(fmt.Sprintf("failed downloading file from url: %s", url), zap.Error(err))
 		return "", nil

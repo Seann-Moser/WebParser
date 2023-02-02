@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"regexp"
 	"strings"
 
 	v2 "github.com/Seann-Moser/WebParser/v2"
@@ -98,6 +99,10 @@ func (a *Auto) Dates(data *v2.HtmlData) []string {
 	return nil
 }
 
+func (a *Auto) Language(data *v2.HtmlData) []string {
+	return nil
+}
+
 func (a *Auto) Chapters(data *v2.HtmlData, baseLink string) []*v2.HtmlData {
 	v := data.Search(nil, map[string]string{"text": "chapter", "class": "chapter"}, nil)
 	if len(v) == 0 {
@@ -125,4 +130,62 @@ func (a *Auto) Chapters(data *v2.HtmlData, baseLink string) []*v2.HtmlData {
 		}
 	}
 	return nil
+}
+
+func (a *Auto) Images(data *v2.HtmlData, baseLink string) []string {
+	v := data.Search([]string{"script"}, map[string]string{"text": "jpg", "text_1": "jpeg", "text_2": "png"}, nil)
+	if len(v) > 0 {
+		urlRegex, err := regexp.Compile("((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)")
+		if err != nil {
+			return nil
+		}
+		reg, err := regexp.Compile("[, \n\"]")
+		if err != nil {
+			return nil
+		}
+		var output []string
+		splitStrings := reg.Split(v[0].TextData, -1)
+		for _, s := range splitStrings {
+			if len(strings.TrimSpace(s)) == 0 {
+				continue
+			}
+			s = strings.ReplaceAll(s, "\\/", "/")
+			if urlRegex.MatchString(s) {
+				output = append(output, s)
+			}
+		}
+		return output
+	}
+
+	v = data.Search([]string{"img", "a"}, map[string]string{"*": "jpg", "*_1": "jpeg", "*_2": "png"}, nil)
+	if len(v) == 0 {
+		return nil
+	}
+	skip := []string{}
+	output := []string{}
+	for i := 0; i < len(v); i++ {
+		current := v[i]
+		for j := 0; j < 2; j++ {
+			if current.Tag == "head" || current.Tag == "meta" {
+				break
+			}
+
+			links := current.Search([]string{"a", "img"}, map[string]string{"href": "jpg|png|jpeg", "src": "jpg|png|jpeg"}, skip)
+			skip = append(skip, current.ID)
+			if len(links) == 0 {
+				current = current.Parent
+				continue
+			}
+
+			for _, link := range links {
+				link.AddLinkInfo(baseLink, []string{"href", "src"})
+				l, err := link.FindLinks(baseLink, []string{"href", "src"})
+				if err != nil || l == "" {
+					continue
+				}
+				output = append(output, l)
+			}
+		}
+	}
+	return output
 }
