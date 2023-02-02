@@ -9,12 +9,12 @@ import (
 
 type HtmlData struct {
 	ID         string            `json:"id"`
-	Parent     *HtmlData         `json:"parent"`
+	Parent     *HtmlData         `json:"-"`
 	Tag        string            `json:"tag"`
 	Attributes map[string]string `json:"attributes"`
 	TextData   string            `json:"text_data"`
-	Child      []*HtmlData       `json:"children"`
-	Sibling    []*HtmlData       `json:"siblings"`
+	Child      []*HtmlData       `json:"-"`
+	Sibling    []*HtmlData       `json:"-"`
 }
 
 // Flatten is used to grab all siblings and children and flatten them into a single object
