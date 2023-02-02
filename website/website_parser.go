@@ -2,10 +2,12 @@ package website
 
 import (
 	"fmt"
-	v2 "github.com/Seann-Moser/WebParser/v2"
-	"github.com/google/uuid"
 	"net/http"
 	"net/url"
+
+	"github.com/google/uuid"
+
+	v2 "github.com/Seann-Moser/WebParser/v2"
 )
 
 // Parser an object that combines multiple search's to get more specific data
@@ -49,10 +51,10 @@ func (wp *Parser) Parse(SourceReq *v2.HTMLSourceRequest, searchURL string) ([]*v
 	var remappedOutput []map[string]string
 	for i := 0; i <= maxOrder; i++ {
 		combinedData := search(l, i)
-		baseSearch := source.Search(combinedData.Tags, combinedData.Attributes)
+		baseSearch := source.Search(combinedData.Tags, combinedData.Attributes, nil)
 		for index, d := range baseSearch {
 			if combinedData.Flatten {
-				baseSearch[index] = d.Flatten(nil)
+				baseSearch[index] = d.Flatten(nil, nil)
 			}
 			r := remap(baseSearch[index], combinedData, u)
 			if len(r) > 0 {

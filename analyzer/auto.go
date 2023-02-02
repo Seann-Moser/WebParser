@@ -189,3 +189,72 @@ func (a *Auto) Images(data *v2.HtmlData, baseLink string) []string {
 	}
 	return output
 }
+
+func (a *Auto) Pages(data *v2.HtmlData, baseLink string) []string {
+	//v := data.Search([]string{"script"}, map[string]string{"text": "page"}, nil)
+	//if len(v) > 0 {
+	//	urlRegex, err := regexp.Compile("((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)")
+	//	if err != nil {
+	//		return nil
+	//	}
+	//	reg, err := regexp.Compile("[, \n\"]")
+	//	if err != nil {
+	//		return nil
+	//	}
+	//	var output []string
+	//	splitStrings := reg.Split(v[0].TextData, -1)
+	//	for _, s := range splitStrings {
+	//		if len(strings.TrimSpace(s)) == 0 {
+	//			continue
+	//		}
+	//		s = strings.ReplaceAll(s, "\\/", "/")
+	//		if urlRegex.MatchString(s) {
+	//			output = append(output, s)
+	//		}
+	//	}
+	//	if len(output) > 0{
+	//		return output
+	//	}
+	//
+	//}
+
+	v := data.Search([]string{}, map[string]string{"*": "page"}, nil)
+	if len(v) == 0 {
+		return nil
+	}
+	skip := []string{}
+	output := []string{}
+	dedup := map[string]struct{}{}
+	for i := 0; i < len(v); i++ {
+		current := v[i]
+		for j := 0; j < 2; j++ {
+			if current.Tag == "head" || current.Tag == "meta" {
+				break
+			}
+
+			links := current.Search([]string{"a", "option"}, map[string]string{"href": "^/.*[0-9]+", "src": "^/.*[0-9]+", "value": "^/.*[0-9]+"}, skip)
+			skip = append(skip, current.ID)
+			if len(links) == 0 {
+				current = current.Parent
+				continue
+			}
+
+			for _, link := range links {
+				link.AddLinkInfo(baseLink, []string{"href", "src", "value"})
+				l, err := link.FindLinks(baseLink, []string{"href", "src", "value"})
+				if err != nil || l == "" {
+					continue
+				}
+				if l == baseLink || !strings.Contains(l, baseLink) {
+					continue
+				}
+				if _, found := dedup[l]; found {
+					continue
+				}
+				output = append(output, l)
+				dedup[l] = struct{}{}
+			}
+		}
+	}
+	return output
+}
