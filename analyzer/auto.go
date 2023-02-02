@@ -1,4 +1,4 @@
-package parser
+package analyzer
 
 import (
 	"regexp"
@@ -191,33 +191,6 @@ func (a *Auto) Images(data *v2.HtmlData, baseLink string) []string {
 }
 
 func (a *Auto) Pages(data *v2.HtmlData, baseLink string) []string {
-	//v := data.Search([]string{"script"}, map[string]string{"text": "page"}, nil)
-	//if len(v) > 0 {
-	//	urlRegex, err := regexp.Compile("((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)")
-	//	if err != nil {
-	//		return nil
-	//	}
-	//	reg, err := regexp.Compile("[, \n\"]")
-	//	if err != nil {
-	//		return nil
-	//	}
-	//	var output []string
-	//	splitStrings := reg.Split(v[0].TextData, -1)
-	//	for _, s := range splitStrings {
-	//		if len(strings.TrimSpace(s)) == 0 {
-	//			continue
-	//		}
-	//		s = strings.ReplaceAll(s, "\\/", "/")
-	//		if urlRegex.MatchString(s) {
-	//			output = append(output, s)
-	//		}
-	//	}
-	//	if len(output) > 0{
-	//		return output
-	//	}
-	//
-	//}
-
 	v := data.Search([]string{}, map[string]string{"*": "page"}, nil)
 	if len(v) == 0 {
 		return nil
