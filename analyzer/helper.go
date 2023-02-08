@@ -23,7 +23,7 @@ type SiteSource struct {
 
 func NewSiteSource(proxyUrl string, minDelay, maxDelay int) *SiteSource {
 	return &SiteSource{
-		client:   &http.Client{Timeout: 5 * time.Second},
+		client:   &http.Client{},
 		ProxyUrl: proxyUrl,
 		MaxDelay: minDelay,
 		MinDelay: maxDelay,

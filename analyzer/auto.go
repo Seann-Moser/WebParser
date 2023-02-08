@@ -62,15 +62,15 @@ func (a *Auto) Author(data *v2.HtmlData) string {
 	return ""
 }
 
-func (a *Auto) Tags(data *v2.HtmlData) []string {
-	v := data.Search([]string{}, map[string]string{"text": "genre", "text_2": "tags", "text_3": "genres"}, nil)
+func (a *Auto) Tags(data *v2.HtmlData, parents int) []string {
+	v := data.Search([]string{}, map[string]string{"text": "genre", "text_2": "tags", "text_3": "genres", "*": "tag"}, nil)
 	if len(v) == 0 {
 		return nil
 	}
 	skip := []string{}
 	for i := 0; i < len(v); i++ {
 		current := v[i]
-		for j := 0; j < 3; j++ {
+		for j := 0; j < parents; j++ {
 			skip = append(skip, current.ID)
 			d := current.Search([]string{"p", "span", "a"}, map[string]string{}, skip)
 			if len(d) == 0 {
@@ -79,11 +79,15 @@ func (a *Auto) Tags(data *v2.HtmlData) []string {
 			}
 			output := []string{}
 			dup := map[string]struct{}{}
+			numReg, _ := regexp.Compile("^[0-9]+")
 			for _, s := range d {
 				if len(s.TextData) == 0 {
 					continue
 				}
 				if _, found := dup[s.TextData]; found {
+					continue
+				}
+				if numReg.MatchString(s.TextData) {
 					continue
 				}
 				output = append(output, s.TextData)
@@ -104,7 +108,7 @@ func (a *Auto) Language(data *v2.HtmlData) []string {
 }
 
 func (a *Auto) Chapters(data *v2.HtmlData, baseLink string) []*v2.HtmlData {
-	v := data.Search(nil, map[string]string{"text": "chapter", "class": "chapter"}, nil)
+	v := data.Search(nil, map[string]string{"text": "chapter", "class": "chapter", "*": "thumbnail"}, nil)
 	if len(v) == 0 {
 		return nil
 	}
@@ -157,7 +161,7 @@ func (a *Auto) Images(data *v2.HtmlData, baseLink string) []string {
 		return output
 	}
 
-	v = data.Search([]string{"img", "a"}, map[string]string{"*": "jpg", "*_1": "jpeg", "*_2": "png"}, nil)
+	v = data.Search([]string{"img", "a", "data-src"}, map[string]string{"*": "jpg", "*_1": "jpeg", "*_2": "png"}, nil)
 	if len(v) == 0 {
 		return nil
 	}
@@ -170,7 +174,7 @@ func (a *Auto) Images(data *v2.HtmlData, baseLink string) []string {
 				break
 			}
 
-			links := current.Search([]string{"a", "img"}, map[string]string{"href": "jpg|png|jpeg", "src": "jpg|png|jpeg"}, skip)
+			links := current.Search([]string{"a", "img"}, map[string]string{"href": "jpg|png|jpeg", "src": "jpg|png|jpeg", "data-src": "jpg|png|jpeg"}, skip)
 			skip = append(skip, current.ID)
 			if len(links) == 0 {
 				current = current.Parent
@@ -178,8 +182,8 @@ func (a *Auto) Images(data *v2.HtmlData, baseLink string) []string {
 			}
 
 			for _, link := range links {
-				link.AddLinkInfo(baseLink, []string{"href", "src"})
-				l, err := link.FindLinks(baseLink, []string{"href", "src"})
+				link.AddLinkInfo(baseLink, []string{"href", "src", "data-src"})
+				l, err := link.FindLinks(baseLink, []string{"href", "data-src", "src"})
 				if err != nil || l == "" {
 					continue
 				}

@@ -190,8 +190,14 @@ func (h *HtmlData) AddLinkInfo(baseLink string, linkAttributes []string) {
 		if link == "" {
 			continue
 		}
+		if strings.Contains(link, "base64") {
+			continue
+		}
 		if strings.HasPrefix(link, "//") {
 			h.Attributes[a] = "https:" + link
+			return
+		}
+		if strings.HasPrefix(link, "http") {
 			return
 		}
 		u, err := url.Parse(link)
@@ -219,6 +225,9 @@ func (h *HtmlData) FindLinks(baseLink string, linkAttributes []string) (string, 
 		}
 		link, _ = url.QueryUnescape(link)
 		if link == "" {
+			continue
+		}
+		if strings.Contains(link, "base64") {
 			continue
 		}
 		if strings.HasPrefix(link, "//") {
