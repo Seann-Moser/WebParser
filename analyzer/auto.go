@@ -62,6 +62,19 @@ func (a *Auto) Author(data *v2.HtmlData) string {
 	return ""
 }
 
+func (a *Auto) TagAuto(data *v2.HtmlData) []string {
+	for i := 1; i <= 3; i++ {
+		tags := a.Tags(getData(data), i)
+		if len(tags) != 0 {
+			return tags
+		}
+	}
+	return nil
+}
+func getData(data *v2.HtmlData) *v2.HtmlData {
+	tmp := *data
+	return &tmp
+}
 func (a *Auto) Tags(data *v2.HtmlData, parents int) []string {
 	v := data.Search([]string{}, map[string]string{"text": "genre", "text_2": "tags", "text_3": "genres", "*": "tag"}, nil)
 	if len(v) == 0 {
@@ -71,6 +84,9 @@ func (a *Auto) Tags(data *v2.HtmlData, parents int) []string {
 	for i := 0; i < len(v); i++ {
 		current := v[i]
 		for j := 0; j < parents; j++ {
+			if current.Tag == "head" || current.Tag == "meta" {
+				break
+			}
 			skip = append(skip, current.ID)
 			d := current.Search([]string{"p", "span", "a"}, map[string]string{}, skip)
 			if len(d) == 0 {
